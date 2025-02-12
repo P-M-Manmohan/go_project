@@ -27,7 +27,7 @@ func VerifyToken(tokenString string) error {
 }
 
 func GenerateTocken(username string) (string, error) {
-	secretKey := []byte(GoDotEnvVariable("SECRET_KEY"))
+		secretKey := []byte(GoDotEnvVariable("SECRET_KEY"))
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256,
 		jwt.MapClaims{
 			"username": username,

@@ -20,34 +20,28 @@ func NewUserController(db *sqlx.DB) *UserController {
 func (uc *UserController) GetUsers(c *gin.Context) {
 	var users []model.User
     var input model.User
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+    authUser, exists := c.Get("authenticatedUser")
+    if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+    input, ok := authUser.(model.User)
+    if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Type assertion failed"})
 		return
 	}
 
 
-
-    err:= uc.DB.QueryRow("SELECT token,role FROM users WHERE name = $1", input.Name).
-    Scan(&input.JWT,&input.Role)
-    if err!=nil{
-        log.Println(err)
-        c.JSON(http.StatusForbidden,gin.H{"error":"Access Denied"})
-        return
-    }
     log.Println(input)
-    err= VerifyToken(input.JWT)
-    if err !=nil{
-        c.JSON(http.StatusForbidden,gin.H{"error":"log in first"})
-    }
     if input.Role=="admin"{
-	err = uc.DB.Select(&users, "SELECT * from users")
+        err := uc.DB.Select(&users, "SELECT * from users")
 	    if err != nil {
 		    log.Println(err)
 		    c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
 		    return
 	    }
     }else{
- 	err = uc.DB.Select(&users, "SELECT * from users WHERE role='user'")
+        err := uc.DB.Select(&users, "SELECT * from users WHERE role='user'")
 	    if err != nil {
 		    log.Println(err)
 		    c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch users"})
@@ -106,7 +100,7 @@ func (uc *UserController) Login(c *gin.Context){
         return
     }
     
-
+    
     if user.JWT=="1"{
         user.JWT,err = GenerateTocken(input.Name)
         if err!=nil{
@@ -128,7 +122,8 @@ func (uc *UserController) Login(c *gin.Context){
 
     
 
-    c.JSON(http.StatusAccepted, user.JWT)
+    c.JSON(http.StatusAccepted,gin.H{ "Token" :user.JWT})
+            log.Println(string(responseBody),"in response")
 
 }
 
