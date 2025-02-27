@@ -1,2 +1,2 @@
 # go_project
-Project in go packend
+Project in go backend
