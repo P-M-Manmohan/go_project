@@ -17,6 +17,12 @@ func NewUserController(db *sqlx.DB) *UserController {
 	return &UserController{DB: db}
 }
 
+
+func (uc *UserController) Home(c *gin.Context) {
+    log.Println(c)
+    c.JSON(http.StatusOK, gin.H{"error": "Hello"})
+}
+
 func (uc *UserController) GetUsers(c *gin.Context) {
 	var users []model.User
     var input model.User
@@ -66,7 +72,7 @@ func (uc *UserController) CreateUser(c *gin.Context) {
     user.Password=hashedPassword
     user.Salt=salt
 
-	_, err = uc.DB.Exec("INSERT INTO users (name, email, password, salt) VALUES ($1, $2, $3, $4)", user.Name, user.Email, hashedPassword, salt)
+	_, err = uc.DB.Exec("INSERT INTO users (name, email, password, salt,role) VALUES ($1, $2, $3, $4, $5)", user.Name, user.Email, hashedPassword, salt, user.Role)
 	if err != nil {
 		log.Println(err)
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to create user"})
@@ -123,16 +129,28 @@ func (uc *UserController) Login(c *gin.Context){
     
 
     c.JSON(http.StatusAccepted,gin.H{ "Token" :user.JWT})
-            log.Println(string(responseBody),"in response")
 
 }
 
 func (uc *UserController) DeleteUser(c *gin.Context){
     var user,input model.User
-    if err := c.ShouldBindJSON(&input); err!=nil{
-        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
-        return
-    }
+
+    authUser, exists := c.Get("authenticatedUser")
+    if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+    input, ok := authUser.(model.User)
+    if !ok {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Type assertion failed"})
+		return
+	}
+
+    //if err := c.ShouldBindJSON(&input); err!=nil{
+    //    c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid input"})
+    //    log.Println(err)
+    //    return
+    //}
     
     log.Println(input)
     err :=uc.DB.QueryRow("SELECT name,password,salt FROM users WHERE name=$1", input.Name).

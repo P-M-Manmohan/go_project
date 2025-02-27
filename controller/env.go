@@ -7,9 +7,10 @@ import (
 )
 
 func GoDotEnvVariable(key string) string {
-	err := godotenv.Load(".env")
+	err := godotenv.Load("local.env")
 	if err != nil {
-		log.Fatalf("Error loading .env file")
+        log.Println(err)
+		log.Fatalf("Loading .env file error")
 	}
 
 	return os.Getenv(key)

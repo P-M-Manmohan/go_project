@@ -1,0 +1,23 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.multistage
+    ports: 
+      - '8080:8080'
+    depends_on:
+      - db
+    volumes:
+      - /home/salami/Documents/programs/go/login/database/migrations:/migrations
+
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: hifxproject
+      POSTGRES_DB: POSRGRES
+    volumes: 
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
